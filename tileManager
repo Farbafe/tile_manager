@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+multiplier=$(xdotool getmouselocation --shell | grep 'X=' | cut -b 3-)
+multiplier=$(($multiplier/1920))
+windowId=$(xdotool getactivewindow)
+printf -v windowId '0x%04x' $windowId
+#windowId=$(xwininfo -display :0 | grep 'id: 0x' | grep -Eo '0x[a-z0-9]+') # this allows selecting the window
+python3 /home/deeb/scripts/tileManagerPython.py
+windowPosition=$?
+wmctrl -i -r $windowId -b remove,fullscreen
+wmctrl -i -r $windowId -b remove,maximized_vert,maximized_horz
+case $windowPosition in
+     0)   # bottom left
+          wmctrl -i -r $windowId -e 0,$((0+$multiplier*1920)),540,640,540
+          ;;
+     1)   # top left
+          wmctrl -i -r $windowId -e 0,$((0+$multiplier*1920)),0,640,540
+          ;;
+     2)   # center
+          wmctrl -i -r $windowId -e 0,$((640+$multiplier*1920)),0,640,1080
+          wmctrl -i -r $windowId -b add,maximized_vert
+          ;; 
+     3)   # right
+          wmctrl -i -r $windowId -e 0,$((1280+$multiplier*1920)),0,640,1080
+          wmctrl -i -r $windowId -b add,maximized_vert
+          ;;
+     4)  # left
+          wmctrl -i -r $windowId -e 0,$((0+$multiplier*1920)),0,640,1080
+          wmctrl -i -r $windowId -b add,maximized_vert
+          ;;
+     5)  # center and right
+          wmctrl -i -r $windowId -e 0,$((640+$multiplier*1920)),0,1280,1080
+          wmctrl -i -r $windowId -b add,maximized_vert
+          ;;
+     6) # bottom right
+          wmctrl -i -r $windowId -e 0,$((640+$multiplier*1920)),540,1280,540
+          ;;
+     9) # top right
+          wmctrl -i -r $windowId -e 0,$((640+$multiplier*1920)),0,1280,540
+          ;;
+esac
+exit
+xprop -id $windowId -remove _NET_WM_STATE_TILED
+# you can do always on top with above property
+# well... with cinnamon's built in wm, wmctrl just doesn't work as well
+# it works if the window is not already tiled
+# i tried with xdotool below and it is easier actually but still doesn't work :(
+# i think i will use a different wm altogether
+mate-terminal --command '/home/deeb/Desktop/tileManager'
+sh /home/deeb/Desktop/tileManager
+xdotool selectwindow windowmove x,y windowsize w,h
+
+#displayCount=$(xrandr --listmonitors | grep '^Monitors: ')
+#echo -n $displayCount | tail -c 1
+#displayCount=$?
+#case $displayCount in
+#    2)
+#        # take user input on which monitor to do this action, or auto detect and keep on same, then add a multiplier
+#        ;;
+#esac        
+
+
+# the following is old code
+if $gridLayout==1; then
+    echo '0: topLeft, 1: bottomLeft, 2: center, 3: right'
+    read windowPosition
+    wmctrl -i -r $windowId -b remove,fullscreen
+    wmctrl -i -r $windowId -b remove,maximized_vert,maximized_horz
+    if $(($windowPosition==0)); then
+        wmctrl -i -r $windowId -e 0,0,0,640,540
+    elif $(($windowPosition==1)); then
+        wmctrl -i -r $windowId -e 0,0,540,640,540
+    elif $(($windowPosition==2)); then
+        wmctrl -i -r $windowId -e 0,640,0,640,1080
+        wmctrl -i -r $windowId -b add,maximized_vert
+    elif $(($windowPosition==3)); then
+        wmctrl -i -r $windowId -e 0,1280,0,640,1080
+        wmctrl -i -r $windowId -b add,maximized_vert
+    elif $(($windowPosition==23)); then
+        wmctrl -i -r $windowId -e 0,640,0,1280,1080
+        wmctrl -i -r $windowId -b add,maximized_vert
+    fi
+elif $gridLayout==0; then
+    echo '0: topLeft, 1: bottomLeft, 2: topRight, 3: bottomRight'
+    read windowPosition
+    wmctrl -i -r $windowId -b remove,fullscreen
+    wmctrl -i -r $windowId -b remove,maximized_vert,maximized_horz
+    if $(($windowPosition==0)); then
+        wmctrl -i -r $windowId -e 0,0,0,960,540
+    elif $(($windowPosition==1)); then
+        wmctrl -i -r $windowId -e 0,0,540,960,540
+    elif $(($windowPosition==2)); then
+        wmctrl -i -r $windowId -e 0,960,0,960,540
+    elif $(($windowPosition==3)); then
+        wmctrl -i -r $windowId -e 0,960,540,960,540
+    elif $(($windowPosition==23)); then
+        wmctrl -i -r $windowId -e 0,960,0,960,1080
+    fi
+fi
